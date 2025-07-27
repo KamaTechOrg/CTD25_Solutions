@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ast import List, Tuple
+from typing import List, Tuple
 from Command import Command
 from Moves import Moves
 from Graphics import Graphics
@@ -29,7 +29,7 @@ class State:
         self.graphics.reset(cmd)
         self.physics.reset(cmd)
 
-    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List[Piece]], my_color: str = "X"):
+    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List["Piece"]], my_color: str = "X"):
         """Process a command and potentially transition to a new state."""
         nxt = self.transitions.get(cmd.type)
 

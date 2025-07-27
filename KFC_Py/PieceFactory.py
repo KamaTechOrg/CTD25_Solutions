@@ -27,8 +27,8 @@ class PieceFactory:
 
     # ──────────────────────────────────────────────────────────────
     @staticmethod
-    def _load_master_csv(pieces_root: pathlib.Path) -> dict[str, dict[str, str]]:
-        _global_trans: dict[str, dict[str, str]] = {}
+    def _load_master_csv(pieces_root: pathlib.Path) -> Dict[str, Dict[str, str]]:
+        _global_trans: Dict[str, Dict[str, str]] = {}
         csv_path = pieces_root / "transitions.csv"
         if not csv_path.exists():
             return _global_trans

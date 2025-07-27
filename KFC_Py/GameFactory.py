@@ -1,4 +1,5 @@
 import pathlib
+from typing import Union
 from Board import Board
 from PieceFactory import PieceFactory
 from Game import Game
@@ -6,7 +7,7 @@ from Game import Game
 CELL_PX = 64
 
 
-def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
+def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:
     """Build a *Game* from the on-disk asset hierarchy rooted at *pieces_root*.
 
     This reads *board.csv* located inside *pieces_root*, creates a blank board

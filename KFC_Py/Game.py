@@ -32,8 +32,8 @@ class Game:
 
         self.selected_id_1: Optional[str] = None
         self.selected_id_2: Optional[str] = None
-        self.last_cursor2: Tuple[int, int] | None = None
-        self.last_cursor1: Tuple[int, int] | None = None
+        self.last_cursor2: Optional[Tuple[int, int]] = None
+        self.last_cursor1: Optional[Tuple[int, int]] = None
 
         # keyboard helpers ---------------------------------------------------
         self.keyboard_processor: Optional[KeyboardProcessor] = None
@@ -189,7 +189,7 @@ class Game:
     def _validate(self, pieces):
         """Ensure both kings present and no two pieces share a cell."""
         has_white_king = has_black_king = False
-        seen_cells: dict[tuple[int, int], str] = {}
+        seen_cells: Dict[Tuple[int, int], str] = {}
         for p in pieces:
             cell = p.current_cell()
             if cell in seen_cells:
