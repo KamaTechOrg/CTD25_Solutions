@@ -1,6 +1,7 @@
 import threading, logging
 import keyboard  # pip install keyboard
 from Command import Command
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ class KeyboardProcessor:
     into logical actions via a user‑supplied keymap.
     """
 
-    def __init__(self, rows: int, cols: int, keymap: dict[str, str]):
+    def __init__(self, rows: int, cols: int, keymap: Dict[str, str]):
         self.rows = rows
         self.cols = cols
         self.keymap = keymap
@@ -43,7 +44,7 @@ class KeyboardProcessor:
 
         return action
 
-    def get_cursor(self) -> tuple[int, int]:
+    def get_cursor(self) -> Tuple[int, int]:
         with self._lock:
             return tuple(self._cursor)
 
