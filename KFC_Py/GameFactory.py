@@ -41,7 +41,7 @@ def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:
                 if code:
                     pieces.append(pf.create_piece(code, (r, c)))
 
-    game = Game(pieces, board)
+    game = Game(pieces, board, pieces_root=pieces_root, graphics_factory=gfx_factory, img_factory=img_factory)
     # Blue cursor (player 2) on top black pawn, green cursor (player 1) on bottom white pawn
     pb_cell = (1, 4)
     pw_cell = (6, 4)

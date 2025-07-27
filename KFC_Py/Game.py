@@ -17,11 +17,14 @@ class InvalidBoard(Exception): ...
 
 
 class Game:
-    def __init__(self, pieces: List[Piece], board: Board):
+    def __init__(self, pieces: List[Piece], board: Board, pieces_root=None, graphics_factory=None, img_factory=None):
         if not self._validate(pieces):
             raise InvalidBoard("missing kings")
         self.pieces = pieces
         self.board = board
+        self.pieces_root = pieces_root  # שמור את pieces_root לשימוש בקידום
+        self.graphics_factory = graphics_factory
+        self.img_factory = img_factory
         self.START_NS = time.monotonic_ns()
         self._time_factor = 1  # for tests
         self.user_input_queue = queue.Queue()  # thread-safe
@@ -230,6 +233,32 @@ class Game:
             for p in to_remove:
                 if p in self.pieces:
                     self.pieces.remove(p)
+
+        # --- Pawn Promotion ---
+        # Promote pawns that reached the last row
+        from PieceFactory import PieceFactory
+        to_promote = []
+        for p in list(self.pieces):
+            if p.id.startswith('PW') and p.current_cell()[0] == 0:
+                to_promote.append((p, 'QW'))
+            elif p.id.startswith('PB') and p.current_cell()[0] == 7:
+                to_promote.append((p, 'QB'))
+        if to_promote:
+            # השתמש ב-board, pieces_root, graphics_factory, img_factory מהאובייקט
+            from GraphicsFactory import GraphicsFactory
+            gfx_factory = self.graphics_factory or (GraphicsFactory(self.img_factory) if self.img_factory else None)
+            factory = PieceFactory(self.board, self.pieces_root, graphics_factory=gfx_factory)
+            for pawn, queen_type in to_promote:
+                cell = pawn.current_cell()
+                # Remove pawn
+                self.pieces.remove(pawn)
+                # Create queen at same cell
+                queen = factory.create_piece(queen_type, cell)
+                self.pieces.append(queen)
+                # Update lookup
+                self.piece_by_id[queen.id] = queen
+                if pawn.id in self.piece_by_id:
+                    del self.piece_by_id[pawn.id]
 
     def _validate(self, pieces):
         """Ensure both kings present and no two pieces share a cell."""
