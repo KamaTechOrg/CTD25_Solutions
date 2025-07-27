@@ -175,3 +175,5 @@ class RestPhysics(StaticTemporaryPhysics):
     def can_capture(self) -> bool: return False
 
     def is_movement_blocker(self) -> bool: return True
+
+

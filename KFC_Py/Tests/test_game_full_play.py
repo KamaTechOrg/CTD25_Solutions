@@ -1,3 +1,4 @@
+
 import pathlib, time
 
 from GraphicsFactory import MockImgFactory
@@ -6,22 +7,18 @@ from Command import Command
 from GameFactory import create_game
 
 import numpy as np
-
 import pytest
 
 PIECES_ROOT = pathlib.Path(__file__).parent.parent / "pieces"
 BOARD_CSV = PIECES_ROOT / "board.csv"
 
 
-# ---------------------------------------------------------------------------
-#                          GAMEPLAY TESTS
-# ---------------------------------------------------------------------------
-
-
-
+# # ---------------------------------------------------------------------------
+# #                          GAMEPLAY TESTS
+# # ---------------------------------------------------------------------------
 
 def test_gameplay_pawn_move_and_capture():
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000
     game._update_cell2piece_map()
     pw = game.pos[(6, 0)][0]
@@ -33,10 +30,10 @@ def test_gameplay_pawn_move_and_capture():
     assert pw.current_cell() == (4, 0)
     assert pb.current_cell() == (3, 1)
     time.sleep(0.5)
-    game._run_game_loop(num_iterations=100, is_with_graphics=False)
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
     game.user_input_queue.put(Command(game.game_time_ms(), pw.id, "move", [(4, 0), (3, 1)]))
     time.sleep(0.5)
-    game._run_game_loop(num_iterations=100, is_with_graphics=False)
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
     assert pw.current_cell() == (3, 1)
     assert pw in game.pieces
     assert pb not in game.pieces
@@ -46,10 +43,9 @@ def test_gameplay_pawn_move_and_capture():
 #                          ADDITIONAL GAMEPLAY SCENARIO TESTS
 # ---------------------------------------------------------------------------
 
-
 def test_piece_blocked_by_own_color():
     """A rook cannot move through a friendly pawn that blocks its path."""
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000  # speed-up time for fast tests
     game._update_cell2piece_map()
 
@@ -66,7 +62,7 @@ def test_piece_blocked_by_own_color():
 
 def test_illegal_move_rejected():
     """A bishop attempting a vertical move (illegal) should be rejected."""
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000
     game._update_cell2piece_map()
 
@@ -82,7 +78,7 @@ def test_illegal_move_rejected():
 
 def test_knight_jumps_over_friendly_pieces():
     """A knight should be able to jump over friendly pieces."""
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000
     game._update_cell2piece_map()
 
@@ -98,19 +94,24 @@ def test_knight_jumps_over_friendly_pieces():
 
 def test_piece_capture():
     """Knight captures an opposing pawn after a sequence of moves."""
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000
     game._update_cell2piece_map()
 
     # 1. Advance the black pawn from d7 to d5.
     bp = game.pos[(1, 3)][0]  # Black pawn on d7
+    print("🔄 מנסה להזיז את הסוס מ- (5,2) ל-(3,3)")
+
     game.user_input_queue.put(Command(game.game_time_ms(), bp.id, "move", [(1, 3), (3, 3)]))
-    game._run_game_loop(num_iterations=100, is_with_graphics=False)
+
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
+    print("📍 מיקום נוכחי של הסוס:", wn.current_cell())
 
     # 2. Move white knight (b1) to c3.
     wn = game.pos[(7, 1)][0]
+
     game.user_input_queue.put(Command(game.game_time_ms(), wn.id, "move", [(7, 1), (5, 2)]))
-    game._run_game_loop(num_iterations=100, is_with_graphics=False)
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
 
     # 3. Knight captures the pawn on d5 (3,3).
     game.user_input_queue.put(Command(game.game_time_ms(), wn.id, "move", [(5, 2), (3, 3)]))
@@ -118,11 +119,38 @@ def test_piece_capture():
 
     assert wn.current_cell() == (3, 3)
     assert bp not in game.pieces  # Pawn was captured
+def test_piece_capture():
+    """Knight captures an opposing pawn after a sequence of moves."""
+    game = create_game("../pieces", MockImgFactory())
+    game._time_factor = 1_000_000_000
+    game._update_cell2piece_map()
+
+    # 1. Advance the black pawn from d7 to d5.
+    bp = game.pos[(1, 3)][0]  # Black pawn on d7
+    game.user_input_queue.put(Command(game.game_time_ms(), bp.id, "move", [(1, 3), (3, 3)]))
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
+    game._update_cell2piece_map()
+
+    # 2. Move white knight (b1) to c3.
+    wn = game.pos[(7, 1)][0]  # White knight on b1
+    game.user_input_queue.put(Command(game.game_time_ms(), wn.id, "move", [(7, 1), (5, 2)]))
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
+    game._update_cell2piece_map()
+
+    # 3. Knight captures the pawn on d5 (3,3).
+    game.user_input_queue.put(Command(game.game_time_ms(), wn.id, "move", [(5, 2), (3, 3)]))
+    game._run_game_loop(num_iterations=500, is_with_graphics=False)
+    game._update_cell2piece_map()
+
+    # ✅ בדיקות
+    assert wn.current_cell() == (3, 3)
+    assert bp not in game.pieces  # Pawn was captured
+
 
 
 def test_pawn_double_step_only_first_move():
     """Pawn may move two squares only on its initial move; afterwards only one square."""
-    game = create_game("../../pieces", MockImgFactory())
+    game = create_game("../pieces", MockImgFactory())
     game._time_factor = 1_000_000_000
     game._update_cell2piece_map()
 
@@ -139,4 +167,3 @@ def test_pawn_double_step_only_first_move():
 
     # Pawn should remain on e4 after the illegal two-square attempt.
     assert pawn.current_cell() == (4, 4)
-
