@@ -18,16 +18,8 @@
 #include <algorithm>
 #include <unordered_map>
 #include <iostream>
-
-#if __has_include(<filesystem>)
+#include <cctype>
 #include <filesystem>
-namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#else
-#error "Filesystem support not found"
-#endif
 
 class InvalidBoard : public std::runtime_error {
 public:
@@ -40,7 +32,11 @@ public:
 
     // --- main public API ---
     int game_time_ms() const;
+    // for debug:
+    void setTimeFactor(int factor);
+
     Board clone_board() const;
+
 
     // Mirror Python run() behaviour
     void run(int num_iterations = -1, bool is_with_graphics = true);
@@ -67,19 +63,26 @@ private:
     std::vector<Command> user_input_queue;
 
     std::chrono::steady_clock::time_point start_tp;
+    int _timeFactor;
 };
 
 // ---------------- Implementation inline --------------------
 inline Game::Game(std::vector<PiecePtr> pcs, Board board)
-    : pieces(pcs), board(board) {
+    : pieces(pcs), board(board), _timeFactor(1) {
     validate();
     for(const auto & p : pieces) piece_by_id[p->id] = p;
     start_tp = std::chrono::steady_clock::now();
 }
 
 inline int Game::game_time_ms() const {
-    return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(
+    return _timeFactor * static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::steady_clock::now() - start_tp).count());
+}
+
+inline void Game::setTimeFactor(int factor) {
+    if (factor <= 0)
+        throw std::runtime_error("Invalid factor");
+    _timeFactor = factor;
 }
 
 inline Board Game::clone_board() const {
@@ -190,9 +193,12 @@ inline void Game::enqueue_command(const Command& cmd) {
 // ---------------------------------------------------------------------------
 // Helper to read board.csv and create a full game
 // ---------------------------------------------------------------------------
-inline Game create_game(const std::string& pieces_root,
+inline Game create_game(std::string pieces_root,
                         const ImgFactoryPtr& img_factory) {
 
+    // Trim whitespace that might appear accidentally in test paths
+    pieces_root.erase(std::remove_if(pieces_root.begin(), pieces_root.end(), ::isspace), pieces_root.end());
+    
     GraphicsFactory gfx_factory(img_factory);
 
     fs::path root = fs::absolute(fs::path(pieces_root));
@@ -204,7 +210,7 @@ inline Game create_game(const std::string& pieces_root,
     auto board_img = img_factory->load(board_png.string());
     Board board(32,32,8,8, board_img);
 
-    PieceFactory pf(board, pieces_root, gfx_factory);
+    PieceFactory pf(board, root.string(), gfx_factory);
     std::vector<PiecePtr> out;
 
     std::string line; int row=0;

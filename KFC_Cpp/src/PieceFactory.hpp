@@ -23,7 +23,7 @@ public:
     PieceFactory(Board& board,
                  const std::string& pieces_root,
                  const GraphicsFactory& gfx_factory)
-        : board(board), pieces_root(pieces_root), gfx_factory(gfx_factory) {}
+        : board(board), pieces_root(fs::absolute(fs::path(pieces_root)).string()), gfx_factory(gfx_factory) {}
 
     // Direct translation of PieceFactory.create_piece from Python
     PiecePtr create_piece(const std::string& type_name,

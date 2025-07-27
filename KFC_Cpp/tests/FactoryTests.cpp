@@ -21,8 +21,11 @@ TEST_CASE("PhysicsFactory creates correct subclasses") {
     REQUIRE(mvPtr);
     CHECK(mvPtr->get_speed_m_s() == doctest::Approx(2.0));
 
-    auto jump = pf.create({0,0}, "jump", {});
-    CHECK(dynamic_cast<JumpPhysics*>(jump.get()) != nullptr);
+    nlohmann::json jump_cfg = { {"duration_ms", 1000.0} };
+    auto jump = pf.create({0,0}, "jump", jump_cfg);
+    auto* jmpPtr = dynamic_cast<JumpPhysics*>(jump.get());
+    REQUIRE(jmpPtr);
+    CHECK(jmpPtr->get_duration_s() == doctest::Approx(1.0));
 
     nlohmann::json rest_cfg = {{"duration_ms", 500}};
     auto rest = pf.create({0,0}, "long_rest", rest_cfg);
@@ -34,7 +37,7 @@ TEST_CASE("PhysicsFactory creates correct subclasses") {
 TEST_CASE("PieceFactory generates unique piece ids and correct location") {
     Board board(32,32,8,8, make_shared<MockImg>());
     GraphicsFactory gf;
-    PieceFactory pf(board, "../pieces", gf);
+    PieceFactory pf(board, "../../../../pieces", gf);
 
     std::unordered_set<std::string> ids;
     for(int i=0;i<10;++i) {
