@@ -8,7 +8,7 @@ TEST_CASE("Pawn move and capture gameplay") {
     // note: relative path from tests executable – align with existing tests
     Game game = create_game("../../../../pieces", imgFactory);
 
-    // accelerate physics: we cannot change timeFactor, so rely on sufficient iterations
+    game.setTimeFactor(1000000);
 
     // helper lambdas to find piece by cell
     auto find_piece_cell = [&](std::pair<int,int> cell){
@@ -43,6 +43,7 @@ TEST_CASE("Pawn move and capture gameplay") {
 TEST_CASE("Rook blocked by own pawn") {
     auto imgFactory = std::make_shared<MockImgFactory>();
     Game game = create_game("../../../../pieces", imgFactory);
+    game.setTimeFactor(1000000);
 
     auto find_piece = [&](std::pair<int,int> cell){ for(auto &p:game.pieces) if(p->current_cell()==cell) return p; return PiecePtr(); };
 
@@ -61,6 +62,7 @@ TEST_CASE("Rook blocked by own pawn") {
 TEST_CASE("Illegal bishop vertical move rejected") {
     auto imgFactory = std::make_shared<MockImgFactory>();
     Game game = create_game("../../../../pieces", imgFactory);
+    game.setTimeFactor(1000000);
 
     auto find_piece = [&](std::pair<int,int> cell){ for(auto &p:game.pieces) if(p->current_cell()==cell) return p; return PiecePtr(); };
     auto bishop = find_piece({7,2});
@@ -75,6 +77,7 @@ TEST_CASE("Illegal bishop vertical move rejected") {
 TEST_CASE("Knight jumps over friendly pieces") {
     auto imgFactory = std::make_shared<MockImgFactory>();
     Game game = create_game("../../../../ pieces", imgFactory);
+    game.setTimeFactor(1000000);
 
     auto find_piece = [&](std::pair<int,int> cell){ for(auto &p:game.pieces) if(p->current_cell()==cell) return p; return PiecePtr(); };
     auto knight = find_piece({7,1});
@@ -89,6 +92,7 @@ TEST_CASE("Knight jumps over friendly pieces") {
 TEST_CASE("Knight captures pawn after sequence") {
     auto imgFactory = std::make_shared<MockImgFactory>();
     Game game = create_game("../../../../pieces", imgFactory);
+    game.setTimeFactor(1000000);
     auto find_piece = [&](std::pair<int,int> cell){ for(auto &p:game.pieces) if(p->current_cell()==cell) return p; return PiecePtr(); };
     auto bp = find_piece({1,3});
     auto wn = find_piece({7,1});
@@ -117,6 +121,7 @@ TEST_CASE("Knight captures pawn after sequence") {
 TEST_CASE("Pawn double step only on first move") {
     auto imgFactory = std::make_shared<MockImgFactory>();
     Game game = create_game("../../../../pieces", imgFactory);
+    game.setTimeFactor(1000000);
     auto find_piece = [&](std::pair<int,int> cell){ for(auto &p:game.pieces) if(p->current_cell()==cell) return p; return PiecePtr(); };
     auto pawn = find_piece({6,4});
     REQUIRE(pawn);
