@@ -176,8 +176,13 @@ class Game:
             if len(plist) < 2:
                 continue
 
-            # Choose the piece that most recently entered the square
-            winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+            # Prefer as winner the piece that actually moved (start_cell != cell),
+            # otherwise fall back to the most recent arrival
+            moving_pieces = [p for p in plist if getattr(p.state.physics, '_start_cell', cell) != cell]
+            if moving_pieces:
+                winner = max(moving_pieces, key=lambda p: p.state.physics.get_start_ms())
+            else:
+                winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
 
             # Determine if captures allowed: default allow
             if not winner.state.can_capture():
@@ -185,10 +190,14 @@ class Game:
                 pass
 
             # Remove every other piece that *can be captured*
+            to_remove = []
             for p in plist:
                 if p is winner:
                     continue
                 if p.state.can_be_captured():
+                    to_remove.append(p)
+            for p in to_remove:
+                if p in self.pieces:
                     self.pieces.remove(p)
 
     def _validate(self, pieces):

@@ -65,10 +65,15 @@ class PieceFactory:
             graphics = self.graphics_factory.load(state_dir / "sprites",
                                                   cfg.get("graphics", {}), cell_px)
 
+
             physics_cfg = cfg.get("physics", {})
             physics = self.physics_factory.create((0, 0), name, physics_cfg)
-            # Support both: need_clear_path at root or under physics
-            if "need_clear_path" in cfg:
+            # Always force do_i_need_clear_path=False for knight (NB/NW) in move state
+            if (piece_dir.name in ["NB", "NW"]) and name == "move":
+                physics.do_i_need_clear_path = False
+            elif ("need_clear_path" in cfg and cfg["need_clear_path"] is False) or ("need_clear_path" in physics_cfg and physics_cfg["need_clear_path"] is False):
+                physics.do_i_need_clear_path = False
+            elif "need_clear_path" in cfg:
                 physics.do_i_need_clear_path = cfg["need_clear_path"]
             elif "need_clear_path" in physics_cfg:
                 physics.do_i_need_clear_path = physics_cfg["need_clear_path"]
