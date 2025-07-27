@@ -241,7 +241,7 @@ class Game:
         for p in list(self.pieces):
             if p.id.startswith('PW') and p.current_cell()[0] == 0:
                 to_promote.append((p, 'QW'))
-            elif p.id.startswith('PB') and p.current_cell()[0] == 7:
+            elif p.id.startswith('PB') and p.current_cell()[0] == self.board.H_cells - 1:
                 to_promote.append((p, 'QB'))
         if to_promote:
             # השתמש ב-board, pieces_root, graphics_factory, img_factory מהאובייקט
