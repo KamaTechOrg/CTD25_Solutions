@@ -12,11 +12,11 @@ class KeyboardProcessor:
     into logical actions via a user‑supplied keymap.
     """
 
-    def __init__(self, rows: int, cols: int, keymap: Dict[str, str]):
+    def __init__(self, rows: int, cols: int, keymap: Dict[str, str], start_pos: Tuple[int, int] = (0, 0)):
         self.rows = rows
         self.cols = cols
         self.keymap = keymap
-        self._cursor = [0, 0]  # [row, col]
+        self._cursor = [start_pos[0], start_pos[1]]  # [row, col]
         self._lock = threading.Lock()
 
     def process_key(self, event):

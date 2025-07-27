@@ -63,12 +63,16 @@ class Game:
         }
 
         # create two processors
+        # player 1 (ירוק) מתחיל שמאל למטה
         self.kp1 = KeyboardProcessor(self.board.H_cells,
                                      self.board.W_cells,
-                                     keymap=p1_map)
+                                     keymap=p1_map,
+                                     start_pos=(self.board.H_cells - 1, 0))
+        # player 2 (כחול) מתחיל שמאל למעלה
         self.kp2 = KeyboardProcessor(self.board.H_cells,
                                      self.board.W_cells,
-                                     keymap=p2_map)
+                                     keymap=p2_map,
+                                     start_pos=(0, 0))
 
         # **pass the player number** as the 4th argument!
         self.kb_prod_1 = KeyboardProducer(self,
