@@ -36,6 +36,7 @@ class State:
         if not nxt:
             return self
 
+
         if cmd.type == "move":
             if self.moves is None or len(cmd.params) < 2:
                 raise ValueError(f"Invalid move command: params={cmd.params} moves={self.moves}")
@@ -44,6 +45,13 @@ class State:
             dst_cell = cmd.params[1]
             if src_cell != self.physics.get_curr_cell():
                 raise ValueError(f"source cell {src_cell} is not the current cell {self.physics.get_curr_cell()}")
+
+            # Prevent move if dst_cell occupied by friendly piece
+            if cell2piece is not None:
+                dst_pieces = cell2piece.get(dst_cell, [])
+                if any(getattr(p, 'id', None) and p.id[1] == my_color for p in dst_pieces):
+                    logger.debug(f"Blocked move: {src_cell} → {dst_cell} (friendly piece present)")
+                    return self
 
             if not self.moves.is_valid(src_cell, dst_cell, cell2piece, self.physics.is_need_clear_path(), my_color):
                 logger.debug(f"Invalid move: {src_cell} → {dst_cell}")
