@@ -35,7 +35,7 @@ class Graphics:
     def _load_sprites(self, folder, cell_size):
         frames = []
         for p in sorted(folder.glob("*.png")):
-            frames.append(self._img_loader(p, cell_size, keep_aspect=True))
+            frames.append(self._img_loader(p, cell_size, keep_aspect=False))
         if not frames:
             raise ValueError(f"No frames found in {folder}")
 
