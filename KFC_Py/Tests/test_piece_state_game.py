@@ -11,6 +11,7 @@ from Graphics import Graphics
 from GraphicsFactory import MockImgFactory
 from img import Img
 from Moves import Moves
+from typing import Tuple
 
 ROOT_DIR = pathlib.Path(__file__).parent.parent.parent
 PIECES_DIR = ROOT_DIR / "pieces"
