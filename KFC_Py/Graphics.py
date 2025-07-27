@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class Graphics:
     def __init__(self,
                  sprites_folder: pathlib.Path,
-                 cell_size: tuple[int, int],
+                 cell_size: Tuple[int, int],
                  img_loader,
                  loop: bool = True,
                  fps: float = 6.0):
@@ -21,7 +21,7 @@ class Graphics:
         # injectable image loader for tests (defaults to Img().read)
         self._img_loader = img_loader
 
-        self.frames: list[Img] = self._load_sprites(sprites_folder, cell_size)
+        self.frames: List[Img] = self._load_sprites(sprites_folder, cell_size)
         self.loop, self.fps = loop, fps
         self.start_ms = 0
         self.cur_frame = 0

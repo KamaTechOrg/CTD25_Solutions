@@ -32,8 +32,8 @@ class Game:
 
         self.selected_id_1: Optional[str] = None
         self.selected_id_2: Optional[str] = None
-        self.last_cursor2: Tuple[int, int] | None = None
-        self.last_cursor1: Tuple[int, int] | None = None
+        self.last_cursor2: Optional[Tuple[int, int]] = None
+        self.last_cursor1: Optional[Tuple[int, int]] = None
 
         # keyboard helpers ---------------------------------------------------
         self.keyboard_processor: Optional[KeyboardProcessor] = None
@@ -55,7 +55,11 @@ class Game:
         # player 2 key‐map
         p2_map = {
             "w": "up", "s": "down", "a": "left", "d": "right",
-            "f": "select", "g": "jump"
+            "space": "select", "g": "jump",
+            # Hebrew
+            "'": "up", "ד": "down", "ש": "left", "ג": "right",
+            # Sometimes users use ס for left (a)
+            "ע": "jump"
         }
 
         # create two processors
@@ -171,25 +175,50 @@ class Game:
             if len(plist) < 2:
                 continue
 
-            # Choose the piece that most recently entered the square
-            winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+            # Prefer as winner the piece that actually moved (start_cell != cell),
+            # otherwise fall back to the most recent arrival
+            moving_pieces = [p for p in plist if getattr(p.state.physics, '_start_cell', cell) != cell]
+            if moving_pieces:
+                winner = max(moving_pieces, key=lambda p: p.state.physics.get_start_ms())
+            else:
+                winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+
+            # Prevent capturing/moving onto a friendly piece
+            winner_side = self._side_of(winner.id)
+            # If any piece in the cell is from the same side (except the winner), block the move (no capture, no move)
+            if any(p is not winner and self._side_of(p.id) == winner_side for p in plist):
+                # Move is blocked, return winner to its start cell with animation if possible
+                start_cell = getattr(winner.state.physics, '_start_cell', None)
+                if start_cell and winner.current_cell() != start_cell:
+                    now = self.game_time_ms()
+                    # Use the same move type as the last command if possible
+                    move_type = 'jump' if hasattr(winner.state.physics, 'do_i_need_clear_path') and not winner.state.physics.do_i_need_clear_path else 'move'
+                    from Command import Command
+                    cmd = Command(now, winner.id, move_type, [start_cell, start_cell])
+                    winner.state.reset(cmd)
+                continue
 
             # Determine if captures allowed: default allow
             if not winner.state.can_capture():
                 # Allow capture even for idle pieces to satisfy game rules
                 pass
 
-            # Remove every other piece that *can be captured*
+            # Remove every other piece that *can be captured* and is from the opposite side
+            to_remove = []
             for p in plist:
                 if p is winner:
                     continue
-                if p.state.can_be_captured():
+                # Only capture if from opposite side
+                if p.state.can_be_captured() and self._side_of(p.id) != winner_side:
+                    to_remove.append(p)
+            for p in to_remove:
+                if p in self.pieces:
                     self.pieces.remove(p)
 
     def _validate(self, pieces):
         """Ensure both kings present and no two pieces share a cell."""
         has_white_king = has_black_king = False
-        seen_cells: dict[tuple[int, int], str] = {}
+        seen_cells: Dict[Tuple[int, int], str] = {}
         for p in pieces:
             cell = p.current_cell()
             if cell in seen_cells:

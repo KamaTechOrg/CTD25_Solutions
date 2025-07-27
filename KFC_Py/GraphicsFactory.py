@@ -1,4 +1,5 @@
 import pathlib
+from typing import Tuple
 
 from Graphics import Graphics
 from img import Img
@@ -32,7 +33,7 @@ class GraphicsFactory:
     def load(self,
              sprites_dir: pathlib.Path,
              cfg: dict,
-             cell_size: tuple[int, int]) -> Graphics:
+             cell_size: Tuple[int, int]) -> Graphics:
         return Graphics(
             sprites_folder=sprites_dir,
             cell_size=cell_size,

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ast import List, Tuple
+from typing import List, Tuple
 from Command import Command
 from Moves import Moves
 from Graphics import Graphics
@@ -29,7 +29,7 @@ class State:
         self.graphics.reset(cmd)
         self.physics.reset(cmd)
 
-    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List[Piece]], my_color: str = "X"):
+    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List["Piece"]], my_color: str = "X"):
         """Process a command and potentially transition to a new state."""
         nxt = self.transitions.get(cmd.type)
 
@@ -44,6 +44,13 @@ class State:
             dst_cell = cmd.params[1]
             if src_cell != self.physics.get_curr_cell():
                 raise ValueError(f"source cell {src_cell} is not the current cell {self.physics.get_curr_cell()}")
+
+            # Prevent move if dst_cell occupied by friendly piece
+            if cell2piece is not None:
+                dst_pieces = cell2piece.get(dst_cell, [])
+                if any(getattr(p, 'id', None) and p.id[1] == my_color for p in dst_pieces):
+                    logger.debug(f"Blocked move: {src_cell} → {dst_cell} (friendly piece present)")
+                    return self
 
             if not self.moves.is_valid(src_cell, dst_cell, cell2piece, self.physics.is_need_clear_path(), my_color):
                 logger.debug(f"Invalid move: {src_cell} → {dst_cell}")
