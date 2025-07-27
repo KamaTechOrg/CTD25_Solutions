@@ -52,10 +52,15 @@ class Game:
             "up": "up", "down": "down", "left": "left", "right": "right",
             "enter": "select", "+": "jump"
         }
-        # player 2 key‐map
+        # player 2 key‐map (blue): w/a/s/d or ש/ד/ג/ס for movement, space for select
         p2_map = {
+            # English
             "w": "up", "s": "down", "a": "left", "d": "right",
-            "f": "select", "g": "jump"
+            "space": "select", "g": "jump",
+            # Hebrew
+            "'": "up", "ד": "down", "ש": "left", "ג": "right",
+            # Sometimes users use ס for left (a)
+            "ע": "jump"
         }
 
         # create two processors
