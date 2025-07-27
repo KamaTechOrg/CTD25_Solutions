@@ -33,7 +33,7 @@ def _graphics():
                     img_loader=MockImgFactory())
 
 
-def _make_piece(piece_id: str, cell: tuple[int, int], board: Board) -> Piece:
+def _make_piece(piece_id: str, cell: Tuple[int, int], board: Board) -> Piece:
     """Create a test piece with idle, move and jump states."""
     idle_phys = IdlePhysics(board)
     move_phys = MovePhysics(board, param=1.0)  # 1 cell/sec

@@ -1,6 +1,8 @@
+
 import threading, logging
 import keyboard  # pip install keyboard
 from Command import Command
+from typing import Dict, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +13,10 @@ class KeyboardProcessor:
     into logical actions via a user‑supplied keymap.
     """
 
-    def __init__(self, rows: int, cols: int, keymap: dict[str, str]):
+    def __init__(self, rows: int, cols: int, keymap: Dict[str, str]):
         self.rows = rows
         self.cols = cols
-        self.keymap = keymap
+        self.keymap = keymap  # type: Dict[str, str]
         self._cursor = [0, 0]  # [row, col]
         self._lock = threading.Lock()
 
@@ -43,9 +45,9 @@ class KeyboardProcessor:
 
         return action
 
-    def get_cursor(self) -> tuple[int, int]:
+    def get_cursor(self) -> Tuple[int, int]:
         with self._lock:
-            return tuple(self._cursor)
+            return tuple(self._cursor)  # type: Tuple[int, int]
 
 
 class KeyboardProducer(threading.Thread):
@@ -106,7 +108,8 @@ class KeyboardProducer(threading.Thread):
                     self.game.game_time_ms(),
                     self.selected_id,
                     "move",
-                    [self.selected_cell, cell]
+                    [self.selected_cell, cell],
+                    player=self.player
                 )
                 self.queue.put(cmd)
                 logger.info(f"Player{self.player} queued {cmd}")

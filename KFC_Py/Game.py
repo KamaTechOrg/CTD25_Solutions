@@ -32,8 +32,8 @@ class Game:
 
         self.selected_id_1: Optional[str] = None
         self.selected_id_2: Optional[str] = None
-        self.last_cursor2: Tuple[int, int] | None = None
-        self.last_cursor1: Tuple[int, int] | None = None
+        self.last_cursor2: Optional[Tuple[int, int]] = None
+        self.last_cursor1: Optional[Tuple[int, int]] = None
 
         # keyboard helpers ---------------------------------------------------
         self.keyboard_processor: Optional[KeyboardProcessor] = None
@@ -52,10 +52,15 @@ class Game:
             "up": "up", "down": "down", "left": "left", "right": "right",
             "enter": "select", "+": "jump"
         }
-        # player 2 key‐map
+        # player 2 key‐map (blue): w/a/s/d or ש/ד/ג/ס for movement, space for select
         p2_map = {
+            # English
             "w": "up", "s": "down", "a": "left", "d": "right",
-            "f": "select", "g": "jump"
+            "space": "select", "g": "jump",
+            # Hebrew
+            "'": "up", "ד": "down", "ש": "left", "ג": "right",
+            # Sometimes users use ס for left (a)
+            "ע": "jump"
         }
 
         # create two processors
@@ -65,6 +70,12 @@ class Game:
         self.kp2 = KeyboardProcessor(self.board.H_cells,
                                      self.board.W_cells,
                                      keymap=p2_map)
+
+        # Set initial cursor positions if provided
+        if self.last_cursor1 is not None:
+            self.kp1._cursor = list(self.last_cursor1)
+        if self.last_cursor2 is not None:
+            self.kp2._cursor = list(self.last_cursor2)
 
         # **pass the player number** as the 4th argument!
         self.kb_prod_1 = KeyboardProducer(self,
@@ -136,9 +147,9 @@ class Game:
             ):
                 r, c = kp.get_cursor()
                 # draw rectangle
-                y1 = r * self.board.cell_H_pix;
+                y1 = r * self.board.cell_H_pix
                 x1 = c * self.board.cell_W_pix
-                y2 = y1 + self.board.cell_H_pix - 1;
+                y2 = y1 + self.board.cell_H_pix - 1
                 x2 = x1 + self.board.cell_W_pix - 1
                 color = (0, 255, 0) if player == 1 else (255, 0, 0)
                 self.curr_board.img.draw_rect(x1, y1, x2, y2, color)
@@ -161,6 +172,15 @@ class Game:
             logger.debug("Unknown piece id %s", cmd.piece_id)
             return
 
+        # Determine player from command (assume Command has 'player' attribute)
+        player = getattr(cmd, 'player', None)
+        if player is not None:
+            # player 1 = ירוק = לבן (W), player 2 = כחול = שחור (B)
+            side = self._side_of(cmd.piece_id)
+            if (player == 1 and side != 'W') or (player == 2 and side != 'B'):
+                logger.debug("Player %s tried to move piece %s of side %s", player, cmd.piece_id, side)
+                return
+
         mover.on_command(cmd, self.pos)
 
     def _resolve_collisions(self):
@@ -171,25 +191,50 @@ class Game:
             if len(plist) < 2:
                 continue
 
-            # Choose the piece that most recently entered the square
-            winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+            # Prefer as winner the piece that actually moved (start_cell != cell),
+            # otherwise fall back to the most recent arrival
+            moving_pieces = [p for p in plist if getattr(p.state.physics, '_start_cell', cell) != cell]
+            if moving_pieces:
+                winner = max(moving_pieces, key=lambda p: p.state.physics.get_start_ms())
+            else:
+                winner = max(plist, key=lambda p: p.state.physics.get_start_ms())
+
+            # Prevent capturing/moving onto a friendly piece
+            winner_side = self._side_of(winner.id)
+            # If any piece in the cell is from the same side (except the winner), block the move (no capture, no move)
+            if any(p is not winner and self._side_of(p.id) == winner_side for p in plist):
+                # Move is blocked, return winner to its start cell with animation if possible
+                start_cell = getattr(winner.state.physics, '_start_cell', None)
+                if start_cell and winner.current_cell() != start_cell:
+                    now = self.game_time_ms()
+                    # Use the same move type as the last command if possible
+                    move_type = 'jump' if hasattr(winner.state.physics, 'do_i_need_clear_path') and not winner.state.physics.do_i_need_clear_path else 'move'
+                    from Command import Command
+                    cmd = Command(now, winner.id, move_type, [start_cell, start_cell])
+                    winner.state.reset(cmd)
+                continue
 
             # Determine if captures allowed: default allow
             if not winner.state.can_capture():
                 # Allow capture even for idle pieces to satisfy game rules
                 pass
 
-            # Remove every other piece that *can be captured*
+            # Remove every other piece that *can be captured* and is from the opposite side
+            to_remove = []
             for p in plist:
                 if p is winner:
                     continue
-                if p.state.can_be_captured():
+                # Only capture if from opposite side
+                if p.state.can_be_captured() and self._side_of(p.id) != winner_side:
+                    to_remove.append(p)
+            for p in to_remove:
+                if p in self.pieces:
                     self.pieces.remove(p)
 
     def _validate(self, pieces):
         """Ensure both kings present and no two pieces share a cell."""
         has_white_king = has_black_king = False
-        seen_cells: dict[tuple[int, int], str] = {}
+        seen_cells: Dict[Tuple[int, int], str] = {}
         for p in pieces:
             cell = p.current_cell()
             if cell in seen_cells:

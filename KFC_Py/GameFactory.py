@@ -1,4 +1,5 @@
 import pathlib
+from typing import Union
 from Board import Board
 from PieceFactory import PieceFactory
 from Game import Game
@@ -6,7 +7,7 @@ from Game import Game
 CELL_PX = 64
 
 
-def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
+def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:
     """Build a *Game* from the on-disk asset hierarchy rooted at *pieces_root*.
 
     This reads *board.csv* located inside *pieces_root*, creates a blank board
@@ -40,4 +41,15 @@ def create_game(pieces_root: str | pathlib.Path, img_factory) -> Game:
                 if code:
                     pieces.append(pf.create_piece(code, (r, c)))
 
-    return Game(pieces, board) 
+    game = Game(pieces, board)
+    # Blue cursor (player 2) on top black pawn, green cursor (player 1) on bottom white pawn
+    pb_cell = (1, 4)
+    pw_cell = (6, 4)
+    for p in pieces:
+        if p.id.startswith('PB') and p.current_cell() == pb_cell:
+            game.selected_id_2 = p.id
+            game.last_cursor2 = pb_cell
+        if p.id.startswith('PW') and p.current_cell() == pw_cell:
+            game.selected_id_1 = p.id
+            game.last_cursor1 = pw_cell
+    return game

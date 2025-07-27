@@ -10,7 +10,7 @@ class Piece:
         self.id = piece_id
         self.state = init_state
 
-    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List[Piece]]):
+    def on_command(self, cmd: Command, cell2piece: Dict[Tuple[int, int], List["Piece"]]):
         """Process a command and potentially transition to a new state."""
         my_color = self.id[1]
         self.state = self.state.on_command(cmd, cell2piece, my_color)
@@ -34,6 +34,6 @@ class Piece:
     # Abstraction helper – SINGLE public accessor so other modules don't have
     # to reach deep into `state → physics` implementation details.
     # Does **not** mutate internal state, so thread-safe without extra locks.
-    def current_cell(self) -> tuple[int, int]:
+    def current_cell(self) -> Tuple[int, int]:
         """Return the piece's board cell as (row, col)."""
         return self.state.physics.get_curr_cell()
