@@ -71,6 +71,12 @@ class Game:
                                      self.board.W_cells,
                                      keymap=p2_map)
 
+        # Set initial cursor positions if provided
+        if self.last_cursor1 is not None:
+            self.kp1._cursor = list(self.last_cursor1)
+        if self.last_cursor2 is not None:
+            self.kp2._cursor = list(self.last_cursor2)
+
         # **pass the player number** as the 4th argument!
         self.kb_prod_1 = KeyboardProducer(self,
                                           self.user_input_queue,

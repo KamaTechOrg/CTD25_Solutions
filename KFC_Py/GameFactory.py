@@ -41,4 +41,15 @@ def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:
                 if code:
                     pieces.append(pf.create_piece(code, (r, c)))
 
-    return Game(pieces, board) 
+    game = Game(pieces, board)
+    # Blue cursor (player 2) on top black pawn, green cursor (player 1) on bottom white pawn
+    pb_cell = (1, 4)
+    pw_cell = (6, 4)
+    for p in pieces:
+        if p.id.startswith('PB') and p.current_cell() == pb_cell:
+            game.selected_id_2 = p.id
+            game.last_cursor2 = pb_cell
+        if p.id.startswith('PW') and p.current_cell() == pw_cell:
+            game.selected_id_1 = p.id
+            game.last_cursor1 = pw_cell
+    return game
