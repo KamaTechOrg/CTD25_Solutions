@@ -147,9 +147,9 @@ class Game:
             ):
                 r, c = kp.get_cursor()
                 # draw rectangle
-                y1 = r * self.board.cell_H_pix;
+                y1 = r * self.board.cell_H_pix
                 x1 = c * self.board.cell_W_pix
-                y2 = y1 + self.board.cell_H_pix - 1;
+                y2 = y1 + self.board.cell_H_pix - 1
                 x2 = x1 + self.board.cell_W_pix - 1
                 color = (0, 255, 0) if player == 1 else (255, 0, 0)
                 self.curr_board.img.draw_rect(x1, y1, x2, y2, color)
@@ -171,6 +171,15 @@ class Game:
         if not mover:
             logger.debug("Unknown piece id %s", cmd.piece_id)
             return
+
+        # Determine player from command (assume Command has 'player' attribute)
+        player = getattr(cmd, 'player', None)
+        if player is not None:
+            # player 1 = ירוק = לבן (W), player 2 = כחול = שחור (B)
+            side = self._side_of(cmd.piece_id)
+            if (player == 1 and side != 'W') or (player == 2 and side != 'B'):
+                logger.debug("Player %s tried to move piece %s of side %s", player, cmd.piece_id, side)
+                return
 
         mover.on_command(cmd, self.pos)
 

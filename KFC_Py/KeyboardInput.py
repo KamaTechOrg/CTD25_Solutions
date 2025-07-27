@@ -108,7 +108,8 @@ class KeyboardProducer(threading.Thread):
                     self.game.game_time_ms(),
                     self.selected_id,
                     "move",
-                    [self.selected_cell, cell]
+                    [self.selected_cell, cell],
+                    player=self.player
                 )
                 self.queue.put(cmd)
                 logger.info(f"Player{self.player} queued {cmd}")
