@@ -1,9 +1,11 @@
 import pathlib, numpy as np
-
+import os
+import sys
+import pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from Board import Board
 from Moves import Moves
 from img import Img
-
 
 # ---------------------------------------------------------------------------
 #                               BOARD & IMG
@@ -11,8 +13,18 @@ from img import Img
 
 
 def _blank_img(w: int = 10, h: int = 10):
-    img_path = pathlib.Path(__file__).parent.parent.parent / "pieces/board.png"
-    return Img().read(img_path, (w, h), keep_aspect=False)
+    # img_path = pathlib.Path(__file__).parent.parent.parent / "pieces/board.png"
+    PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]  # או תתאימי לפי המבנה שלך
+    img_path = PROJECT_ROOT / "pieces/board.png"
+    print("cwd:", os.getcwd())
+    print("exists:", os.path.exists(str(img_path)))
+    print("isfile:", os.path.isfile(str(img_path)))
+    print("🔍 מחפש תמונה ב:", img_path)
+    print("📂 exists?", img_path.exists())
+    from PIL import Image
+
+    
+    return Img().read(str(img_path), (w, h), keep_aspect=False)
 
 
 def test_board_cell_conversions():
@@ -39,9 +51,9 @@ def test_img_draw_and_rectangle():
     dst.draw_rect(0, 0, 3, 3, (255, 0, 0))
 
 
-# ---------------------------------------------------------------------------
-#                                   MOVES
-# ---------------------------------------------------------------------------
+# # ---------------------------------------------------------------------------
+# #                                   MOVES
+# # ---------------------------------------------------------------------------
 
 
 def test_moves_parsing_and_validation(tmp_path):

@@ -1,5 +1,11 @@
 import pathlib, numpy as np
 import pytest
+import sys
+import os
+import pathlib
+CURRENT_DIR = pathlib.Path(__file__).resolve().parent
+KFC_PY_DIR = CURRENT_DIR.parent  # זה תיקיית KFC_Py
+sys.path.append(str(KFC_PY_DIR))
 from Board import Board
 from mock_img import MockImg
 from PhysicsFactory import PhysicsFactory
