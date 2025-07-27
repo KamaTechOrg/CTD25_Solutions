@@ -65,7 +65,7 @@ private:
         return out;
     }
 
-    std::shared_ptr<State> build_state_machine(const fs::path& piece_dir) {
+    StatePtr build_state_machine(const fs::path& piece_dir) {
         fs::path states_root = piece_dir / "states";
         if(!fs::exists(states_root) || !fs::is_directory(states_root)) {
             throw std::runtime_error("Missing states directory: " + states_root.string());
@@ -73,7 +73,7 @@ private:
 
         GlobalTrans global_trans = load_master_csv(states_root);
 
-        std::unordered_map<std::string, std::shared_ptr<State>> states;
+        std::unordered_map<std::string, StatePtr> states;
 
         std::pair<int,int> board_size = {board.W_cells, board.H_cells};
         std::pair<int,int> cell_px    = {board.cell_W_pix, board.cell_H_pix};

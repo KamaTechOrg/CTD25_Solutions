@@ -13,11 +13,11 @@ typedef std::shared_ptr<Piece> PiecePtr;
 
 class Piece {
 public:
-	Piece(std::string id, std::shared_ptr<State> init_state)
+	Piece(std::string id, StatePtr init_state)
 		: id(id), state(init_state) {}
 
 	std::string id;
-	std::shared_ptr<State> state;
+	StatePtr state;
 
 	using Cell = std::pair<int, int>;
 	using Cell2Pieces = std::unordered_map<Cell, std::vector<PiecePtr>, PairHash>;

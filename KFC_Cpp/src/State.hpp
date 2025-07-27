@@ -7,6 +7,8 @@
 #include <memory>
 #include <string>
 #include <cctype>
+class State;
+typedef std::shared_ptr<State> StatePtr;
 
 class State : public std::enable_shared_from_this<State> {
 public:
@@ -20,17 +22,17 @@ public:
     std::shared_ptr<BasePhysics> physics;
 
     // Keep strong references so target states are not destroyed while only reachable via this map
-    std::unordered_map<std::string, std::shared_ptr<State>> transitions;
+    std::unordered_map<std::string, StatePtr> transitions;
     std::string name;
 
-    void set_transition(const std::string& event, const std::shared_ptr<State>& target) { transitions[event] = target; }
+    void set_transition(const std::string& event, const StatePtr& target) { transitions[event] = target; }
 
     void reset(const Command& cmd) {
         graphics->reset(cmd);
         physics->reset(cmd);
     }
 
-    std::shared_ptr<State> on_command(const Command& cmd) {
+    StatePtr on_command(const Command& cmd) {
         std::string key = cmd.type;
         for(auto& ch : key) ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
         auto it = transitions.find(key);
@@ -44,7 +46,7 @@ public:
         return shared_from_this();
     }
 
-    std::shared_ptr<State> update(int now_ms) {
+    StatePtr update(int now_ms) {
         auto internal = physics->update(now_ms);
         if(internal) {
             return on_command(*internal);
