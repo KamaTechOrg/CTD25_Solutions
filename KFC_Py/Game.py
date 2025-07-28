@@ -21,25 +21,41 @@ class InvalidBoard(Exception): ...
 class Game(Publisher):
     def play_sound(self, name):
         import os, threading
-        try:
-            from playsound import playsound
-        except ImportError:
-            return
         sound_dir = os.path.join(os.path.dirname(__file__), '..', 'sounds')
         sound_files = {
             'move': os.path.join(sound_dir, 'move.wav'),
             'jump': os.path.join(sound_dir, 'jump.wav'),
             'capture': os.path.join(sound_dir, 'capture.wav'),
-            'win': os.path.join(sound_dir, 'win.wav'),
+            'win': os.path.join(sound_dir, 'win.mp3'),
         }
-        path = sound_files.get(name)
-        if path and os.path.exists(path):
-            def _play():
+        # Support both .wav and .mp3 for each sound
+        base = os.path.splitext(sound_files.get(name, ''))[0]
+        candidates = [base + ext for ext in ('.wav', '.mp3')]
+        path = next((p for p in candidates if os.path.exists(p)), None)
+        if not path:
+            return
+        def _play():
+            try:
                 try:
-                    playsound(path)
+                    import pygame
+                    pygame.mixer.init()
+                    pygame.mixer.music.load(path)
+                    pygame.mixer.music.play()
+                    # Let it play in background, don't block
                 except Exception as e:
-                    logger.warning(f"Failed to play sound {name}: {e}")
-            threading.Thread(target=_play, daemon=True).start()
+                    # fallback to simpleaudio for wav only
+                    if path.lower().endswith('.wav'):
+                        try:
+                            import simpleaudio as sa
+                            wave_obj = sa.WaveObject.from_wave_file(path)
+                            play_obj = wave_obj.play()
+                        except Exception as e2:
+                            logger.warning(f"Failed to play sound {name} (simpleaudio fallback): {e2}")
+                    else:
+                        logger.warning(f"Failed to play sound {name}: {e}")
+            except Exception as e:
+                logger.warning(f"Failed to play sound {name}: {e}")
+        threading.Thread(target=_play, daemon=True).start()
     def __init__(self, pieces: List[Piece], board: Board, pieces_root=None, graphics_factory=None, img_factory=None):
         super().__init__()
         if not self._validate(pieces):
