@@ -46,13 +46,17 @@ class Game(Publisher):
         self.keyboard_producer: Optional[KeyboardProducer] = None
 
         # --- Pub/Sub integration ---
-        from move_log import MoveLog
+        from move_log import MoveLog, MoveLogDisplay, ScoreBoardDisplay
         from score_board import ScoreBoard
         self.move_log = MoveLog()
         self.score_board = ScoreBoard()
         self.subscribe('move', self.move_log)
         self.subscribe('capture', self.move_log)
         self.subscribe('capture', self.score_board)
+        # Display for move log and score (draws on background)
+        self.move_log_display = MoveLogDisplay(self.move_log)
+        self.score_board_display = ScoreBoardDisplay()
+        self.subscribe('capture', self.score_board_display)
 
         # --- Load background image ONCE ---
         from img import Img
@@ -227,6 +231,11 @@ class Game(Publisher):
             board_img_cropped = self.curr_board.img.img[crop_y:crop_y+crop_h, crop_x:crop_x+crop_w]
             # Place the cropped board on the background
             bg.img[y:y+crop_h, x:x+crop_w] = board_img_cropped
+            # Draw score headers and move logs for both players
+            self.score_board_display.draw(bg, side='left', y=50)
+            self.move_log_display.draw(bg, side='left', y_offset=100)
+            self.score_board_display.draw(bg, side='right', y=50)
+            self.move_log_display.draw(bg, side='right', y_offset=100)
             self.curr_board.img.img = bg.img
 
     def _show(self):
@@ -250,13 +259,22 @@ class Game(Publisher):
                 logger.debug("Player %s tried to move piece %s of side %s", player, cmd.piece_id, side)
                 return
 
+        # Calculate time since game start in seconds
+        move_time_ms = self.game_time_ms()
+        move_time_s = move_time_ms // 1000
+        hours = move_time_s // 3600
+        minutes = (move_time_s % 3600) // 60
+        seconds = move_time_s % 60
+        time_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+
         # Publish move event (before move is executed)
         self.notify('move', {
             'piece': cmd.piece_id,
             'from': cmd.params[0] if cmd.params else None,
             'to': cmd.params[1] if cmd.params and len(cmd.params) > 1 else None,
             'type': cmd.type,
-            'player': player
+            'player': player,
+            'time': time_str
         })
         mover.on_command(cmd, self.pos)
         # Print log and score after each move (for CLI demo)
