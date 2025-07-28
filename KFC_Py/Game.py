@@ -2,9 +2,11 @@ import queue, threading, time, math, logging
 from typing import List, Dict, Tuple, Optional, Set
 from collections import defaultdict
 
+
 from Board import Board
 from Command import Command
 from Piece import Piece
+from pubsub import Publisher
 
 
 from KeyboardInput import KeyboardProcessor, KeyboardProducer
@@ -16,8 +18,9 @@ logger = logging.getLogger(__name__)
 class InvalidBoard(Exception): ...
 
 
-class Game:
+class Game(Publisher):
     def __init__(self, pieces: List[Piece], board: Board, pieces_root=None, graphics_factory=None, img_factory=None):
+        super().__init__()
         if not self._validate(pieces):
             raise InvalidBoard("missing kings")
         self.pieces = pieces
@@ -41,6 +44,15 @@ class Game:
         # keyboard helpers ---------------------------------------------------
         self.keyboard_processor: Optional[KeyboardProcessor] = None
         self.keyboard_producer: Optional[KeyboardProducer] = None
+
+        # --- Pub/Sub integration ---
+        from move_log import MoveLog
+        from score_board import ScoreBoard
+        self.move_log = MoveLog()
+        self.score_board = ScoreBoard()
+        self.subscribe('move', self.move_log)
+        self.subscribe('capture', self.move_log)
+        self.subscribe('capture', self.score_board)
 
     def game_time_ms(self) -> int:
         return self._time_factor * (time.monotonic_ns() - self.START_NS) // 1_000_000
@@ -184,7 +196,18 @@ class Game:
                 logger.debug("Player %s tried to move piece %s of side %s", player, cmd.piece_id, side)
                 return
 
+        # Publish move event (before move is executed)
+        self.notify('move', {
+            'piece': cmd.piece_id,
+            'from': cmd.params[0] if cmd.params else None,
+            'to': cmd.params[1] if cmd.params and len(cmd.params) > 1 else None,
+            'type': cmd.type,
+            'player': player
+        })
         mover.on_command(cmd, self.pos)
+        # Print log and score after each move (for CLI demo)
+        self.move_log.print_log()
+        self.score_board.print_scores()
 
     def _resolve_collisions(self):
         self._update_cell2piece_map()
@@ -254,6 +277,14 @@ class Game:
                     to_remove.append(p)
             for p in to_remove:
                 if p in self.pieces:
+                    # Publish capture event
+                    self.notify('capture', {
+                        'attacker': winner.id,
+                        'victim': p.id,
+                        'cell': cell,
+                        'attacker_state': getattr(winner.state, 'name', None),
+                        'victim_state': getattr(p.state, 'name', None)
+                    })
                     self.pieces.remove(p)
 
         # --- Pawn Promotion ---

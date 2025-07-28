@@ -1,5 +1,5 @@
 import pytest
-from KFC_Py.pubsub import Publisher, Subscriber
+from pubsub import Publisher, Subscriber
 
 class TestSubscriber(Subscriber):
     def __init__(self):
