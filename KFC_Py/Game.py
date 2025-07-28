@@ -19,6 +19,27 @@ class InvalidBoard(Exception): ...
 
 
 class Game(Publisher):
+    def play_sound(self, name):
+        import os, threading
+        try:
+            from playsound import playsound
+        except ImportError:
+            return
+        sound_dir = os.path.join(os.path.dirname(__file__), '..', 'sounds')
+        sound_files = {
+            'move': os.path.join(sound_dir, 'move.wav'),
+            'jump': os.path.join(sound_dir, 'jump.wav'),
+            'capture': os.path.join(sound_dir, 'capture.wav'),
+            'win': os.path.join(sound_dir, 'win.wav'),
+        }
+        path = sound_files.get(name)
+        if path and os.path.exists(path):
+            def _play():
+                try:
+                    playsound(path)
+                except Exception as e:
+                    logger.warning(f"Failed to play sound {name}: {e}")
+            threading.Thread(target=_play, daemon=True).start()
     def __init__(self, pieces: List[Piece], board: Board, pieces_root=None, graphics_factory=None, img_factory=None):
         super().__init__()
         if not self._validate(pieces):
@@ -263,6 +284,11 @@ class Game(Publisher):
         prev_state = mover.state
         mover.on_command(cmd, self.pos)
         if mover.state is not prev_state:
+            # Play sound for move or jump
+            if cmd.type == 'jump':
+                self.play_sound('jump')
+            else:
+                self.play_sound('move')
             # Only after a valid move, log it
             move_time_ms = self.game_time_ms()
             move_time_s = move_time_ms // 1000
@@ -358,6 +384,7 @@ class Game(Publisher):
                         'attacker_state': getattr(winner.state, 'name', None),
                         'victim_state': getattr(p.state, 'name', None)
                     })
+                    self.play_sound('capture')
                     self.pieces.remove(p)
 
         # --- Pawn Promotion ---
@@ -409,6 +436,7 @@ class Game(Publisher):
         return len(kings) < 2
 
     def _announce_win(self):
+        self.play_sound('win')
         import cv2
         winner = 'Black' if any(p.id.startswith('KB') for p in self.pieces) else 'White'
         text = f'{winner} wins!'
