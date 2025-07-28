@@ -283,5 +283,25 @@ class Game:
         return len(kings) < 2
 
     def _announce_win(self):
-        text = 'Black wins!' if any(p.id.startswith('KB') for p in self.pieces) else 'White wins!'
+        import cv2
+        winner = 'Black' if any(p.id.startswith('KB') for p in self.pieces) else 'White'
+        text = f'{winner} wins!'
         logger.info(text)
+
+        # Try to use the current board image (after last move)
+        board_img = getattr(self, 'curr_board', self.board).img
+        # Get image size
+        h, w = board_img.img.shape[:2]
+        # Dynamic font size and thickness
+        font_size = min(w, h) / 400
+        thickness = 3
+        # Calculate text size for centering
+        text_size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)
+        text_w, text_h = text_size
+        x = (w - text_w) // 2
+        y = (h + text_h) // 2
+        # Draw the text in the center (red)
+        board_img.put_text(text, x, y, font_size, color=(144, 144, 254, 1), thickness=thickness)
+        board_img.show()
+        time.sleep(5)
+
