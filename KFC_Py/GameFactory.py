@@ -4,7 +4,7 @@ from Board import Board
 from PieceFactory import PieceFactory
 from Game import Game
 
-CELL_PX = 64
+CELL_PX = 90
 
 
 def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:

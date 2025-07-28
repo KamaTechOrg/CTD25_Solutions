@@ -54,10 +54,20 @@ class Game(Publisher):
         self.subscribe('capture', self.move_log)
         self.subscribe('capture', self.score_board)
 
+        # --- Load background image ONCE ---
+        from img import Img
+        import os
+        bg_path = os.path.join("pieces", "background.png")
+        try:
+            self._background_img = Img().read(bg_path)
+        except Exception:
+            self._background_img = None
+
     def game_time_ms(self) -> int:
         return self._time_factor * (time.monotonic_ns() - self.START_NS) // 1_000_000
 
     def clone_board(self) -> Board:
+        # Clone the board only (no background yet)
         return self.board.clone()
 
     def start_user_input_thread(self):
@@ -142,6 +152,26 @@ class Game(Publisher):
         for p in self.pieces:
             p.reset(start_ms)
 
+        # --- Opening text and background ---
+        if self._background_img:
+            # Composite opening text on background
+            bg = self._background_img.copy()
+            h, w = bg.img.shape[:2]
+            text = "Chess Game!"
+            font_size = min(w, h) / 600
+            thickness = 3
+            import cv2
+            text_size, _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, font_size, thickness)
+            text_w, text_h = text_size
+            x = (w - text_w) // 2
+            y = (h + text_h) // 2
+            bg.put_text(text, x, y, font_size, color=(0,0,0,255), thickness=thickness)
+            bg.show()
+            time.sleep(2)
+        else:
+            print("Chess Game!")
+            time.sleep(2)
+
         self._run_game_loop(num_iterations, is_with_graphics)
 
         self._announce_win()
@@ -150,30 +180,54 @@ class Game(Publisher):
             self.kb_prod_2.stop()
 
     def _draw(self):
+        # Draw everything on the board image first
         self.curr_board = self.clone_board()
         for p in self.pieces:
             p.draw_on_board(self.curr_board, now_ms=self.game_time_ms())
 
-        # overlay both players' cursors, but only log on change
+        # Draw player cursors on the board (not on the background)
         if self.kp1 and self.kp2:
             for player, kp, last in (
                     (1, self.kp1, 'last_cursor1'),
                     (2, self.kp2, 'last_cursor2')
             ):
                 r, c = kp.get_cursor()
-                # draw rectangle
                 y1 = r * self.board.cell_H_pix
                 x1 = c * self.board.cell_W_pix
                 y2 = y1 + self.board.cell_H_pix - 1
                 x2 = x1 + self.board.cell_W_pix - 1
-                color = (0, 255, 0) if player == 1 else (255, 0, 0)
+                # Use vibrant colors: Player 1 = magenta, Player 2 = cyan
+                color = (255, 0, 255) if player == 1 else (0, 255, 255)
                 self.curr_board.img.draw_rect(x1, y1, x2, y2, color)
 
-                # only print if moved
                 prev = getattr(self, last)
                 if prev != (r, c):
                     logger.debug("Marker P%s moved to (%s, %s)", player, r, c)
                     setattr(self, last, (r, c))
+
+        # Now composite the board (with pieces and cursors) onto the background
+        from img import Img
+        import os
+        bg_path = os.path.join("pieces", "background.png")
+        try:
+            bg = Img().read(bg_path)
+        except Exception:
+            bg = None
+        if bg:
+            bh, bw = bg.img.shape[:2]
+            h, w = self.curr_board.img.img.shape[:2]
+            # Center the board on the background, but if too big, crop
+            x = max((bw - w) // 2, 0)
+            y = max((bh - h) // 2, 0)
+            # If the board is bigger than the background, crop the board
+            crop_x = 0
+            crop_y = 0
+            crop_w = min(w, bw)
+            crop_h = min(h, bh)
+            board_img_cropped = self.curr_board.img.img[crop_y:crop_y+crop_h, crop_x:crop_x+crop_w]
+            # Place the cropped board on the background
+            bg.img[y:y+crop_h, x:x+crop_w] = board_img_cropped
+            self.curr_board.img.img = bg.img
 
     def _show(self):
         self.curr_board.show()
