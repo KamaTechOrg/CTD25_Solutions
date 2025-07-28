@@ -259,27 +259,28 @@ class Game(Publisher):
                 logger.debug("Player %s tried to move piece %s of side %s", player, cmd.piece_id, side)
                 return
 
-        # Calculate time since game start in seconds
-        move_time_ms = self.game_time_ms()
-        move_time_s = move_time_ms // 1000
-        hours = move_time_s // 3600
-        minutes = (move_time_s % 3600) // 60
-        seconds = move_time_s % 60
-        time_str = f"{hours:02}:{minutes:02}:{seconds:02}"
-
-        # Publish move event (before move is executed)
-        self.notify('move', {
-            'piece': cmd.piece_id,
-            'from': cmd.params[0] if cmd.params else None,
-            'to': cmd.params[1] if cmd.params and len(cmd.params) > 1 else None,
-            'type': cmd.type,
-            'player': player,
-            'time': time_str
-        })
+        # Try to execute the move only if it changes state
+        prev_state = mover.state
         mover.on_command(cmd, self.pos)
-        # Print log and score after each move (for CLI demo)
-        self.move_log.print_log()
-        self.score_board.print_scores()
+        if mover.state is not prev_state:
+            # Only after a valid move, log it
+            move_time_ms = self.game_time_ms()
+            move_time_s = move_time_ms // 1000
+            hours = move_time_s // 3600
+            minutes = (move_time_s % 3600) // 60
+            seconds = move_time_s % 60
+            time_str = f"{hours:02}:{minutes:02}:{seconds:02}"
+            self.notify('move', {
+                'piece': cmd.piece_id,
+                'from': cmd.params[0] if cmd.params else None,
+                'to': cmd.params[1] if cmd.params and len(cmd.params) > 1 else None,
+                'type': cmd.type,
+                'player': player,
+                'time': time_str
+            })
+            # Print log and score after each move (for CLI demo)
+            self.move_log.print_log()
+            self.score_board.print_scores()
 
     def _resolve_collisions(self):
         self._update_cell2piece_map()
