@@ -93,21 +93,52 @@ class KeyboardProducer(threading.Thread):
                 if not piece:
                     print(f"[WARN] No piece at {cell}")
                     return
-
                 self.selected_id = piece.id
                 self.selected_cell = cell
                 print(f"[KEY] Player{self.player} selected {piece.id} at {cell}")
                 return
-
             elif cell == self.selected_cell:  # selected same place
                 self.selected_id = None
                 return
-
             else:
                 cmd = Command(
                     self.game.game_time_ms(),
                     self.selected_id,
                     "move",
+                    [self.selected_cell, cell],
+                    player=self.player
+                )
+                self.queue.put(cmd)
+                logger.info(f"Player{self.player} queued {cmd}")
+                self.selected_id = None
+                self.selected_cell = None
+        elif action == "jump":
+            # If a piece is selected, perform a jump from selected_cell to current cell
+            if self.selected_id is not None and self.selected_cell is not None:
+                cmd = Command(
+                    self.game.game_time_ms(),
+                    self.selected_id,
+                    "jump",
+                    [self.selected_cell, cell],
+                    player=self.player
+                )
+                self.queue.put(cmd)
+                logger.info(f"Player{self.player} queued {cmd}")
+                self.selected_id = None
+                self.selected_cell = None
+            else:
+                # If no piece is selected, select the piece under the cursor and IMMEDIATELY perform jump to the same cell
+                piece = self._find_piece_at(cell)
+                if not piece:
+                    print(f"[WARN] No piece at {cell}")
+                    return
+                self.selected_id = piece.id
+                self.selected_cell = cell
+                # Immediately perform jump to the same cell (single click jump)
+                cmd = Command(
+                    self.game.game_time_ms(),
+                    self.selected_id,
+                    "jump",
                     [self.selected_cell, cell],
                     player=self.player
                 )

@@ -245,7 +245,12 @@ class Game:
                 if p is winner:
                     continue
                 # Only capture if from opposite side
+                # --- DEBUG LOG ---
+                import logging
+                logger = logging.getLogger("collision")
+                logger.info(f"Checking capture: piece={p.id} state={getattr(p.state, 'name', None)} can_be_captured={p.state.can_be_captured()} winner={winner.id} winner_side={winner_side} piece_side={self._side_of(p.id)}")
                 if p.state.can_be_captured() and self._side_of(p.id) != winner_side:
+                    logger.info(f"CAPTURE: {p.id} (state={getattr(p.state, 'name', None)}) is being captured by {winner.id}")
                     to_remove.append(p)
             for p in to_remove:
                 if p in self.pieces:

@@ -93,8 +93,21 @@ class PieceFactory:
                 dst = states.get(nxt)
                 if not dst:
                     continue
-
                 src.set_transition(ev, dst)
+
+        # --- Custom jump logic: idle->jump, jump->short_rest, short_rest->idle ---
+        idle = states.get("idle")
+        jump = states.get("jump")
+        short_rest = states.get("short_rest")
+        if idle and jump:
+            idle.set_transition("jump", jump)
+        if jump and short_rest:
+            jump.set_transition("done", short_rest)
+            # Make the piece invulnerable during jump
+            if hasattr(jump.physics, "can_be_captured"):
+                jump.physics.can_be_captured = lambda: False
+        if short_rest and idle:
+            short_rest.set_transition("done", idle)
 
         # always start at idle
         return states.get("idle")
