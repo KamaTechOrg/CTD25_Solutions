@@ -29,6 +29,17 @@ class Game(Publisher):
             'win': os.path.join(sound_dir, 'win.mp3'),
         }
         # Support both .wav and .mp3 for each sound
+        import os, threading, sys
+        # Always resolve from project root (CTD25_Solutions)
+        main_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        project_root = os.path.abspath(os.path.join(main_dir, '..'))
+        sound_dir = os.path.join(project_root, 'sounds')
+        sound_files = {
+            'move': os.path.join(sound_dir, 'move.wav'),
+            'jump': os.path.join(sound_dir, 'jump.wav'),
+            'capture': os.path.join(sound_dir, 'capture.wav'),
+            'win': os.path.join(sound_dir, 'win.mp3'),
+        }
         base = os.path.splitext(sound_files.get(name, ''))[0]
         candidates = [base + ext for ext in ('.wav', '.mp3')]
         path = next((p for p in candidates if os.path.exists(p)), None)
@@ -103,6 +114,16 @@ class Game(Publisher):
             self._background_img = Img().read(bg_path)
         except Exception:
             self._background_img = None
+        import os, sys
+        main_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        project_root = os.path.abspath(os.path.join(main_dir, '..'))
+        bg_path = os.path.join(project_root, "pieces", "background.png")
+        try:
+            self._background_img = Img().read(bg_path)
+        except Exception as e:
+            logger.warning(f"Failed to load background image: {bg_path} ({e})")
+            self._background_img = None
+        # ...existing code...
 
     def game_time_ms(self) -> int:
         return self._time_factor * (time.monotonic_ns() - self.START_NS) // 1_000_000
@@ -253,6 +274,15 @@ class Game(Publisher):
         try:
             bg = Img().read(bg_path)
         except Exception:
+            bg = None
+        import os, sys
+        main_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        project_root = os.path.abspath(os.path.join(main_dir, '..'))
+        bg_path = os.path.join(project_root, "pieces", "background.png")
+        try:
+            bg = Img().read(bg_path)
+        except Exception as e:
+            logger.warning(f"Failed to load background image: {bg_path} ({e})")
             bg = None
         if bg:
             bh, bw = bg.img.shape[:2]
