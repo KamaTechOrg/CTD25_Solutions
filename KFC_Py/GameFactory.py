@@ -4,7 +4,7 @@ from Board import Board
 from PieceFactory import PieceFactory
 from Game import Game
 
-CELL_PX = 90
+CELL_PX = 53  # Size of a single board cell in pixels, used for board and piece dimensions
 
 
 def create_game(pieces_root: Union[str, pathlib.Path], img_factory) -> Game:

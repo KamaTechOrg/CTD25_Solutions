@@ -24,13 +24,13 @@ class Game(Publisher):
         sound_dir = os.path.join(os.path.dirname(__file__), '..', 'sounds')
         sound_files = {
             'move': os.path.join(sound_dir, 'move.wav'),
-            'jump': os.path.join(sound_dir, 'jump.wav'),
+            'jump': os.path.join(sound_dir, 'jump.mp3'),
             'capture': os.path.join(sound_dir, 'capture.wav'),
             'win': os.path.join(sound_dir, 'win.mp3'),
         }
         # Support both .wav and .mp3 for each sound
         base = os.path.splitext(sound_files.get(name, ''))[0]
-        candidates = [base + ext for ext in ('.wav', '.mp3')]
+        candidates = [base + ext for ext in ('.mp3','.wav')]
         path = next((p for p in candidates if os.path.exists(p)), None)
         if not path:
             return
@@ -228,6 +228,9 @@ class Game(Publisher):
 
         # Draw player cursors on the board (not on the background)
         if self.kp1 and self.kp2:
+            # Two distinct brown shades for player frames
+            color1 = (30, 30, 100)   # Player 1: deep brown (BGR)
+            color2 = (60, 80, 180)   # Player 2: much lighter brown (BGR)
             for player, kp, last in (
                     (1, self.kp1, 'last_cursor1'),
                     (2, self.kp2, 'last_cursor2')
@@ -237,8 +240,7 @@ class Game(Publisher):
                 x1 = c * self.board.cell_W_pix
                 y2 = y1 + self.board.cell_H_pix - 1
                 x2 = x1 + self.board.cell_W_pix - 1
-                # Use vibrant colors: Player 1 = magenta, Player 2 = cyan
-                color = (255, 0, 255) if player == 1 else (0, 255, 255)
+                color = color1 if player == 1 else color2
                 self.curr_board.img.draw_rect(x1, y1, x2, y2, color)
 
                 prev = getattr(self, last)
