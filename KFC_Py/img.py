@@ -37,7 +37,16 @@ class Img:
         path = str(path)
         self.img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
         if self.img is None:
-            raise FileNotFoundError(f"Cannot load image: {path}")
+            # נסה לטעון עם PIL אם OpenCV נכשל
+            try:
+                from PIL import Image
+                pil_img = Image.open(path)
+                # המר ל-RGBA אם צריך
+                if pil_img.mode == 'RGB':
+                    pil_img = pil_img.convert('RGBA')
+                self.img = np.array(pil_img)
+            except Exception as pil_e:
+                raise FileNotFoundError(f"Cannot load image: {path} (cv2 & PIL failed: {pil_e})")
 
         if size is not None:
             target_w, target_h = size

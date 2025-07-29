@@ -108,21 +108,21 @@ class Game(Publisher):
 
         # --- Load background image ONCE ---
         from img import Img
-        import os
-        bg_path = os.path.join("pieces", "background.png")
-        try:
-            self._background_img = Img().read(bg_path)
-        except Exception:
-            self._background_img = None
         import os, sys
         main_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
         project_root = os.path.abspath(os.path.join(main_dir, '..'))
         bg_path = os.path.join(project_root, "pieces", "background.png")
-        try:
-            self._background_img = Img().read(bg_path)
-        except Exception as e:
-            logger.warning(f"Failed to load background image: {bg_path} ({e})")
+        logger.info(f"Trying to load background image from: {bg_path}")
+        if not os.path.exists(bg_path):
+            logger.warning(f"Background image not found: {bg_path}")
             self._background_img = None
+        else:
+            try:
+                self._background_img = Img().read(bg_path)
+                logger.info(f"Background image loaded successfully from: {bg_path}")
+            except Exception as e:
+                logger.error(f"Failed to load background image: {bg_path} ({e})")
+                self._background_img = None
         # ...existing code...
 
     def game_time_ms(self) -> int:
@@ -216,6 +216,9 @@ class Game(Publisher):
 
         # --- Opening text and background ---
         if self._background_img:
+            logger.info("Background image loaded, displaying for test...")
+            self._background_img.show()
+            time.sleep(1)
             # Composite opening text on background
             bg = self._background_img.copy()
             h, w = bg.img.shape[:2]
@@ -268,22 +271,7 @@ class Game(Publisher):
                     setattr(self, last, (r, c))
 
         # Now composite the board (with pieces and cursors) onto the background
-        from img import Img
-        import os
-        bg_path = os.path.join("pieces", "background.png")
-        try:
-            bg = Img().read(bg_path)
-        except Exception:
-            bg = None
-        import os, sys
-        main_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        project_root = os.path.abspath(os.path.join(main_dir, '..'))
-        bg_path = os.path.join(project_root, "pieces", "background.png")
-        try:
-            bg = Img().read(bg_path)
-        except Exception as e:
-            logger.warning(f"Failed to load background image: {bg_path} ({e})")
-            bg = None
+        bg = self._background_img
         if bg:
             bh, bw = bg.img.shape[:2]
             h, w = self.curr_board.img.img.shape[:2]
