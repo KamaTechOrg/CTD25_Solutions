@@ -1,3 +1,4 @@
+
 import threading, logging
 import keyboard  # pip install keyboard
 from Command import Command
@@ -12,11 +13,11 @@ class KeyboardProcessor:
     into logical actions via a user‑supplied keymap.
     """
 
-    def __init__(self, rows: int, cols: int, keymap: Dict[str, str], start_pos: Tuple[int, int] = (0, 0)):
+    def __init__(self, rows: int, cols: int, keymap: Dict[str, str]):
         self.rows = rows
         self.cols = cols
-        self.keymap = keymap
-        self._cursor = [start_pos[0], start_pos[1]]  # [row, col]
+        self.keymap = keymap  # type: Dict[str, str]
+        self._cursor = [0, 0]  # [row, col]
         self._lock = threading.Lock()
 
     def process_key(self, event):
@@ -46,7 +47,7 @@ class KeyboardProcessor:
 
     def get_cursor(self) -> Tuple[int, int]:
         with self._lock:
-            return tuple(self._cursor)
+            return tuple(self._cursor)  # type: Tuple[int, int]
 
 
 class KeyboardProducer(threading.Thread):
@@ -92,22 +93,54 @@ class KeyboardProducer(threading.Thread):
                 if not piece:
                     print(f"[WARN] No piece at {cell}")
                     return
-
                 self.selected_id = piece.id
                 self.selected_cell = cell
                 print(f"[KEY] Player{self.player} selected {piece.id} at {cell}")
                 return
-
             elif cell == self.selected_cell:  # selected same place
                 self.selected_id = None
                 return
-
             else:
                 cmd = Command(
                     self.game.game_time_ms(),
                     self.selected_id,
                     "move",
-                    [self.selected_cell, cell]
+                    [self.selected_cell, cell],
+                    player=self.player
+                )
+                self.queue.put(cmd)
+                logger.info(f"Player{self.player} queued {cmd}")
+                self.selected_id = None
+                self.selected_cell = None
+        elif action == "jump":
+            # If a piece is selected, perform a jump from selected_cell to current cell
+            if self.selected_id is not None and self.selected_cell is not None:
+                cmd = Command(
+                    self.game.game_time_ms(),
+                    self.selected_id,
+                    "jump",
+                    [self.selected_cell, cell],
+                    player=self.player
+                )
+                self.queue.put(cmd)
+                logger.info(f"Player{self.player} queued {cmd}")
+                self.selected_id = None
+                self.selected_cell = None
+            else:
+                # If no piece is selected, select the piece under the cursor and IMMEDIATELY perform jump to the same cell
+                piece = self._find_piece_at(cell)
+                if not piece:
+                    print(f"[WARN] No piece at {cell}")
+                    return
+                self.selected_id = piece.id
+                self.selected_cell = cell
+                # Immediately perform jump to the same cell (single click jump)
+                cmd = Command(
+                    self.game.game_time_ms(),
+                    self.selected_id,
+                    "jump",
+                    [self.selected_cell, cell],
+                    player=self.player
                 )
                 self.queue.put(cmd)
                 logger.info(f"Player{self.player} queued {cmd}")

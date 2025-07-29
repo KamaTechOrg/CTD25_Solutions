@@ -1,4 +1,5 @@
 import pathlib, queue, numpy as np
+from typing import Tuple
 
 from Board import Board
 from Command import Command
@@ -37,7 +38,7 @@ def _build_graphics(cell_px: int = 32):
                     img_loader=MockImgFactory())
 
 
-def _simple_piece(code: str, cell: tuple[int, int], board: Board) -> Piece:
+def _simple_piece(code: str, cell: Tuple[int, int], board: Board) -> Piece:
     """Create a *minimal* piece with an *idle* and *jump* state.
 
     The goal is *not* to replicate the full asset pipeline, merely to

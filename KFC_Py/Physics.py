@@ -92,24 +92,20 @@ class MovePhysics(BasePhysics):
         self._start_cell = cmd.params[0]
         self._end_cell = cmd.params[1]
         self._start_ms = cmd.timestamp
-        # If do_i_need_clear_path is False (e.g. knight), teleport instantly to destination
-        if not self.do_i_need_clear_path:
-            self._curr_pos_m = self.board.cell_to_m(self._end_cell)
+        # Always animate movement, even for knights (do_i_need_clear_path=False)
+        self._curr_pos_m = self.board.cell_to_m(self._start_cell)
+        start_pos = np.array(self.board.cell_to_m(self._start_cell))
+        end_pos = np.array(self.board.cell_to_m(self._end_cell))
+        self._movement_vector = end_pos - start_pos
+        self._movement_vector_length = math.hypot(*self._movement_vector)
+        if self._movement_vector_length == 0:
+            self._movement_vector = np.array([0.0, 0.0])
             self._duration_s = 0
         else:
-            self._curr_pos_m = self.board.cell_to_m(self._start_cell)
-            start_pos = np.array(self.board.cell_to_m(self._start_cell))
-            end_pos = np.array(self.board.cell_to_m(self._end_cell))
-            self._movement_vector = end_pos - start_pos
-            self._movement_vector_length = math.hypot(*self._movement_vector)
             self._movement_vector = self._movement_vector / self._movement_vector_length
             self._duration_s = self._movement_vector_length / self._speed_m_s
 
     def update(self, now_ms: int):
-        if not self.do_i_need_clear_path:
-            # Instantly at destination, immediately finish
-            return Command(now_ms, None, "done", [self._end_cell])
-
         seconds_passed = (now_ms - self._start_ms) / 1000
         self._curr_pos_m = np.array(
             self.board.cell_to_m(self._start_cell)) + self._movement_vector * seconds_passed * self._speed_m_s
